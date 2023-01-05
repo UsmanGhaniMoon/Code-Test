@@ -34,9 +34,7 @@ class UserRepository extends BaseRepository
     function __construct(User $model)
     {
         parent::__construct($model);
-//        $this->mailer = $mailer;
         $this->logger = new Logger('admin_logger');
-
         $this->logger->pushHandler(new StreamHandler(storage_path('logs/admin/laravel-' . date('Y-m-d') . '.log'), Logger::DEBUG));
         $this->logger->pushHandler(new FirePHPHandler());
     }
