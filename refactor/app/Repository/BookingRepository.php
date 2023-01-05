@@ -46,6 +46,7 @@ class BookingRepository extends BaseRepository
         parent::__construct($model);
         $this->mailer = $mailer;
         $this->logger = new Logger('admin_logger');
+
         $this->logger->pushHandler(new StreamHandler(storage_path('logs/admin/laravel-' . date('Y-m-d') . '.log'), Logger::DEBUG));
         $this->logger->pushHandler(new FirePHPHandler());
     }
@@ -56,7 +57,7 @@ class BookingRepository extends BaseRepository
      */
     public function getUsersJobs($user_id)
     {
-        $cuser = User::findOrFail($user_id);
+        $cuser = User::find($user_id);
         $usertype = '';
         $emergencyJobs = array();
         $noramlJobs = array();
@@ -80,6 +81,7 @@ class BookingRepository extends BaseRepository
                 $item['usercheck'] = Job::checkParticularJob($user_id, $item);
             })->sortBy('due')->all();
         }
+
         return ['emergencyJobs' => $emergencyJobs, 'noramlJobs' => $noramlJobs, 'cuser' => $cuser, 'usertype' => $usertype];
     }
 
@@ -112,6 +114,8 @@ class BookingRepository extends BaseRepository
 
             $jobs = $jobs_ids;
             $noramlJobs = $jobs_ids;
+//            $jobs['data'] = $noramlJobs;
+//            $jobs['total'] = $totaljobs;
             return ['emergencyJobs' => $emergencyJobs, 'noramlJobs' => $noramlJobs, 'jobs' => $jobs, 'cuser' => $cuser, 'usertype' => $usertype, 'numpages' => $numpages, 'pagenum' => $pagenum];
         }
     }
@@ -123,6 +127,7 @@ class BookingRepository extends BaseRepository
      */
     public function store($user, $data)
     {
+
         $immediatetime = 5;
         $consumer_type = $user->userMeta->consumer_type;
         if ($user->user_type == env('CUSTOMER_ROLE_ID')) {
@@ -262,11 +267,16 @@ class BookingRepository extends BaseRepository
             $data['customer_town'] = $cuser->userMeta->city;
             $data['customer_type'] = $cuser->userMeta->customer_type;
 
+            //Event::fire(new JobWasCreated($job, $data, '*'));
+
+//            $this->sendNotificationToSuitableTranslators($job->id, $data, '*');// send Push for New job posting
         } else {
             $response['status'] = 'fail';
             $response['message'] = "Translator can not create booking";
         }
+
         return $response;
+
     }
 
     /**
@@ -300,12 +310,14 @@ class BookingRepository extends BaseRepository
             'job'  => $job
         ];
         $this->mailer->send($email, $name, $subject, 'emails.job-created', $send_data);
+
         $response['type'] = $user_type;
         $response['job'] = $job;
         $response['status'] = 'success';
         $data = $this->jobToData($job);
         Event::fire(new JobWasCreated($job, $data, '*'));
         return $response;
+
     }
 
     /**
@@ -359,7 +371,9 @@ class BookingRepository extends BaseRepository
                 $data['job_for'][] = $job->certified;
             }
         }
+
         return $data;
+
     }
 
     /**
@@ -704,7 +718,19 @@ class BookingRepository extends BaseRepository
         $blacklist = UsersBlacklist::where('user_id', $job->user_id)->get();
         $translatorsId = collect($blacklist)->pluck('translator_id')->all();
         $users = User::getPotentialUsers($translator_type, $joblanguage, $gender, $translator_level, $translatorsId);
+
+//        foreach ($job_ids as $k => $v)     // checking translator town
+//        {
+//            $job = Job::find($v->id);
+//            $jobuserid = $job->user_id;
+//            $checktown = Job::checkTowns($jobuserid, $user_id);
+//            if (($job->customer_phone_type == 'no' || $job->customer_phone_type == '') && $job->customer_physical_type == 'yes' && $checktown == false) {
+//                unset($job_ids[$k]);
+//            }
+//        }
+//        $jobs = TeHelper::convertJobIdsInObjs($job_ids);
         return $users;
+
     }
 
     /**
@@ -2098,12 +2124,10 @@ class BookingRepository extends BaseRepository
         $data['updated_at'] = date('Y-m-d H:i:s');
         $data['user_id'] = $userid;
         $data['job_id'] = $jobid;
-        //the date function is better than the carbon date function.
         $data['cancel_at'] = Carbon::now();
 
         $datareopen = array();
         $datareopen['status'] = 'pending';
-        //the date function is better than the carbon date function.
         $datareopen['created_at'] = Carbon::now();
         $datareopen['will_expire_at'] = TeHelper::willExpireAt($job['due'], $datareopen['created_at']);
         //$datareopen['updated_at'] = date('Y-m-d H:i:s');

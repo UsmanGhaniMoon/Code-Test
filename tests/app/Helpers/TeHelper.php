@@ -19,8 +19,7 @@ class TeHelper
 
     public static function getUsermeta($user_id, $key = false)
     {
-        //I think there is something wrong.
-        $user = UserMeta::where('user_id', $user_id)->first();
+        return $user = UserMeta::where('user_id', $user_id)->first()->$key;
         if (!$key)
             return $user->usermeta()->get()->all();
         else {
@@ -33,6 +32,7 @@ class TeHelper
 
     public static function convertJobIdsInObjs($jobs_ids)
     {
+
         $jobs = array();
         foreach ($jobs_ids as $job_obj) {
             $jobs[] = Job::findOrFail($job_obj->id);

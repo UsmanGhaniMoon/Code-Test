@@ -42,17 +42,4 @@ OR
 
 Thank you!
 
-Ans:
-1:Overall the code is good but you can optimize this code. 
 
-2:"findOrFail" You can use this instead of find.
-
-3:$data = $request->all(); =>You can use the request values directly in the function to save the execution time.
-4:$adminSenderEmail = config('app.adminemail');
-This variable is not used in the forward function. You can remove or comment it.
-
-5: the date function is better than the carbon date function.
-6:I think this function can show an error if the record does not exist in the database
-"$user = UserMeta::where('user_id', $user_id)->first()->$key;""
-
-it's true, nothing wrong, but still can optimize this code.
